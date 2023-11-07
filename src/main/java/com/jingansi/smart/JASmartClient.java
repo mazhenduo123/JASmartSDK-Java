@@ -2,6 +2,7 @@ package com.jingansi.smart;
 
 import com.jingansi.smart.enums.EventType;
 import com.jingansi.smart.listener.JASmartServiceCallback;
+import com.jingansi.smart.listener.JASmartThingServiceReply;
 
 import java.util.Map;
 
@@ -39,6 +40,16 @@ public interface JASmartClient {
      * @param jaSmartServiceCallback
      */
     void setPropertySetHandle(JASmartServiceCallback jaSmartServiceCallback);
+
+    /**
+     * 平台能力调用
+     * @param identity 能力名称
+     * @param request 请求参数
+     * @param jaSmartThingServiceReply 响应回调
+     * @return
+     */
+    void platformServiceInvoke(String identity, Map<String, Object> request,
+                       JASmartThingServiceReply jaSmartThingServiceReply);
 
     /**
      * 启动

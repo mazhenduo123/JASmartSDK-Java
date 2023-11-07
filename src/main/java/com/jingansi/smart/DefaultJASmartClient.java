@@ -2,14 +2,15 @@ package com.jingansi.smart;
 
 import com.alibaba.fastjson.JSON;
 import com.jingansi.smart.channel.MQTTChannel;
+import com.jingansi.smart.common.ErrorInfo;
 import com.jingansi.smart.enums.EventType;
 import com.jingansi.smart.listener.JASmartServiceCallback;
+import com.jingansi.smart.listener.JASmartThingServiceReply;
 import com.jingansi.smart.report.CommonMessage;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * 客户端默认实现
@@ -43,7 +44,9 @@ public class DefaultJASmartClient implements JASmartClient {
                 "sys/" + productKey + "/" + deviceId + "/thing/properties/set",
                 // 标准topic订阅
                 "sys/" + productKey + "/" + deviceId + "/thing/service/+/post",
-                "sys/" + productKey + "/" + deviceId + "/thing/service/property/set");
+                "sys/" + productKey + "/" + deviceId + "/thing/service/property/set",
+                "sys/" + productKey + "/" + deviceId + "/platform/service/+/post_reply"
+                );
         messageChannel = new MQTTChannel(endpoint, productKey, deviceId, username, password, topics,
                 adapter);
         adapter.setMessageChannel(messageChannel);
@@ -88,12 +91,29 @@ public class DefaultJASmartClient implements JASmartClient {
     }
 
     @Override
+    public void platformServiceInvoke(String identity, Map<String, Object> request, JASmartThingServiceReply jaSmartThingServiceReply) {
+        String tid = UUID.randomUUID().toString();
+        String bid = UUID.randomUUID().toString();
+        adapter.addServiceInvokeCallback(tid, jaSmartThingServiceReply);
+        messageChannel.send("sys/" + productKey + "/" + deviceId + "/platform/service/" + identity + "/post",
+                JSON.toJSONString(CommonMessage.builder()
+                .tid(tid)
+                .bid(bid)
+                .version("1.0")
+                .timestamp(System.currentTimeMillis())
+                .method("platform.service." + identity + ".post")
+                .data(request)
+                .build()));
+    }
+
+    @Override
     public void start() {
         messageChannel.start();
     }
 
     @Override
     public void release() {
+        adapter.release();
         messageChannel.stop();
     }
 }

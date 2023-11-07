@@ -7,10 +7,14 @@ import com.jingansi.smart.listener.JASmartServiceCallback;
 import com.jingansi.smart.listener.JASmartThingServiceReply;
 import com.jingansi.smart.report.CommonMessage;
 import com.jingansi.smart.report.ReplyMessage;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * 消息解析适配
@@ -21,8 +25,30 @@ import java.util.Map;
  **/
 @Slf4j
 public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallback {
-    Map<String, JASmartServiceCallback> services = new HashMap<>();
+    Map<String, JASmartServiceCallback> services = new ConcurrentHashMap<>();
     MessageChannel messageChannel;
+    Map<String, ReplyEntity> replys = new ConcurrentHashMap<>();
+    Timer replyExpireTimer = new Timer();
+    Executor replyExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
+    public MessageReceiveAdapter() {
+        replyExpireTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Iterator<String> iterator = replys.keySet().iterator();
+                while (iterator.hasNext()) {
+                    String key = iterator.next();
+                    ReplyEntity reply = replys.get(key);
+                    if (reply.expiresTimestamp < System.currentTimeMillis()) {
+                        iterator.remove();
+                        replyExecutor.execute(() -> reply.getReply().error(ErrorInfo.builder()
+                                .code(-1)
+                                .message("请求超时")
+                                .build()));
+                    }
+                }
+            }
+        }, 0, 1000);
+    }
 
     public void setMessageChannel(MessageChannel messageChannel) {
         this.messageChannel = messageChannel;
@@ -30,6 +56,13 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
 
     public void addServiceCallback(String method, JASmartServiceCallback jaSmartServiceCallback) {
         services.put(method, jaSmartServiceCallback);
+    }
+
+    public void addServiceInvokeCallback(String tid, JASmartThingServiceReply jaSmartThingServiceReply) {
+        replys.put(tid, ReplyEntity.builder()
+                .expiresTimestamp(System.currentTimeMillis() + 10 * 1000)
+                .reply(jaSmartThingServiceReply)
+                .build());
     }
 
     @Override
@@ -42,9 +75,15 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
             return;
         }
 
+        if (commonMessage.getMethod().endsWith(".reply")) {
+            Optional.ofNullable(replys.get(commonMessage.getTid())).ifPresent(item ->
+                    replyExecutor.execute(() ->
+                            item.getReply().complete(commonMessage.getData())));
+            return;
+        }
         JASmartServiceCallback callback = services.get(commonMessage.getMethod());
         if (null != callback) {
-            callback.process(commonMessage.getTid(), commonMessage.getData(), new JASmartThingServiceReply() {
+            replyExecutor.execute(() -> callback.process(commonMessage.getTid(), commonMessage.getData(), new JASmartThingServiceReply() {
                 @Override
                 public void complete(Map<String, Object> response) {
                     messageChannel.send(topic + "_reply", JSON.toJSONString(ReplyMessage.builder()
@@ -71,7 +110,7 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
                             .method(commonMessage.getMethod() + ".reply")
                             .build()));
                 }
-            });
+            }));
         } else {
             messageChannel.send(topic + "_reply", JSON.toJSONString(ReplyMessage.builder()
                     .code("OK")
@@ -83,5 +122,25 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
                     .method(commonMessage.getMethod() + ".reply")
                     .build()));
         }
+    }
+
+    public void release() {
+        replyExpireTimer.cancel();
+        services.clear();
+        replys.clear();
+    }
+
+    @Data
+    @Builder
+    public static class ReplyEntity {
+        /**
+         * 过期时间
+         */
+        Long expiresTimestamp;
+
+        /**
+         * 回调函数
+         */
+        JASmartThingServiceReply reply;
     }
 }
