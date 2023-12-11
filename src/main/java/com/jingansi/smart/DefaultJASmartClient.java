@@ -45,8 +45,11 @@ public class DefaultJASmartClient implements JASmartClient {
                 // 标准topic订阅
                 "sys/" + productKey + "/" + deviceId + "/thing/service/+/post",
                 "sys/" + productKey + "/" + deviceId + "/thing/service/property/set",
-                "sys/" + productKey + "/" + deviceId + "/platform/service/+/post_reply"
-                );
+                "sys/" + productKey + "/" + deviceId + "/platform/service/+/post_reply",
+                "sys/" + productKey + "/" + deviceId + "/thing/event/+/info_reply",
+                "sys/" + productKey + "/" + deviceId + "/thing/event/+/warning_reply",
+                "sys/" + productKey + "/" + deviceId + "/thing/event/+/error_reply"
+        );
         messageChannel = new MQTTChannel(endpoint, productKey, deviceId, username, password, topics,
                 adapter);
         adapter.setMessageChannel(messageChannel);
@@ -75,6 +78,22 @@ public class DefaultJASmartClient implements JASmartClient {
                 .method("event." + eventName + "." + eventType.getValue())
                 .data(data)
                 .build()));
+    }
+
+    @Override
+    public void thingEventPost(EventType eventType, String eventName, Map<String, Object> data, JASmartThingServiceReply reply) {
+        String tid = UUID.randomUUID().toString();
+        String bid = UUID.randomUUID().toString();
+        adapter.addServiceInvokeCallback(tid, reply);
+        messageChannel.send("sys/" + productKey + "/" + deviceId + "/thing/event/" + eventName + "/" + eventType.getValue(),
+                JSON.toJSONString(CommonMessage.builder()
+                        .tid(tid)
+                        .bid(bid)
+                        .version("1.0")
+                        .timestamp(System.currentTimeMillis())
+                        .method("event." + eventName + "." + eventType.getValue())
+                        .data(data)
+                        .build()));
     }
 
     @Override

@@ -29,6 +29,15 @@ public interface JASmartClient {
     void thingEventPost(EventType eventType, String eventName, Map<String, Object> data);
 
     /**
+     * 事件上报并接收回应消息
+     * @param eventType 事件类型
+     * @param eventName 事件名称
+     * @param data 事件报文
+     * @param reply 成功或失败的响应
+     */
+    void thingEventPost(EventType eventType, String eventName, Map<String, Object> data, JASmartThingServiceReply reply);
+
+    /**
      * 能力调用回调处理
      * @param identity 能力名称
      * @param jaSmartServiceCallback 能力处理回调

@@ -22,4 +22,6 @@ public class CommonMessage {
     String method;
     Long timestamp;
     Map<String, Object> data;
+    String code;
+    String message;
 }
