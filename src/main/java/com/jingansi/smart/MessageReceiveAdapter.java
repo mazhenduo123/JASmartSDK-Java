@@ -76,16 +76,19 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
         }
 
         if (commonMessage.getMethod().endsWith(".reply")) {
-            Optional.ofNullable(replys.get(commonMessage.getTid())).ifPresent(item ->
-                    replyExecutor.execute(() -> {
-                        if (null == commonMessage.getCode() || commonMessage.getCode().equals("OK"))
-                            item.getReply().complete(commonMessage.getData());
-                        else
-                            item.getReply().error(ErrorInfo.builder()
-                                    .code(-1)
-                                    .message(commonMessage.getMessage())
-                                    .build());
-                    }));
+            Optional.ofNullable(replys.get(commonMessage.getTid())).ifPresent(item -> {
+                        replys.remove(commonMessage.getTid());
+                        replyExecutor.execute(() -> {
+                            if (null == commonMessage.getCode() || commonMessage.getCode().equals("OK"))
+                                item.getReply().complete(commonMessage.getData());
+                            else
+                                item.getReply().error(ErrorInfo.builder()
+                                        .code(-1)
+                                        .message(commonMessage.getMessage())
+                                        .build());
+                        });
+                    }
+            );
             return;
         }
         JASmartServiceCallback callback = services.get(commonMessage.getMethod());
