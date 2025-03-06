@@ -57,6 +57,7 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
             mqttConnectOptions.setAutomaticReconnect(false);
             mqttConnectOptions.setKeepAliveInterval(20);
             mqttConnectOptions.setConnectionTimeout(10);
+            mqttConnectOptions.setMaxInflight(1000);
             client.setTimeToWait(3000);
             client.setCallback(this);
             client.setManualAcks(false);

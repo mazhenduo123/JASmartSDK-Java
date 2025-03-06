@@ -1,7 +1,9 @@
 package com.jingansi.smart.report;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
@@ -13,6 +15,8 @@ import java.util.Map;
  **/
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReplyMessage {
     String code;
     String message;

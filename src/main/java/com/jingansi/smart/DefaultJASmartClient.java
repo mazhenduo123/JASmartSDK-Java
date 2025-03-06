@@ -2,15 +2,15 @@ package com.jingansi.smart;
 
 import com.alibaba.fastjson.JSON;
 import com.jingansi.smart.channel.MQTTChannel;
-import com.jingansi.smart.common.ErrorInfo;
 import com.jingansi.smart.enums.EventType;
 import com.jingansi.smart.listener.JASmartServiceCallback;
 import com.jingansi.smart.listener.JASmartThingServiceReply;
 import com.jingansi.smart.report.CommonMessage;
 
-import java.util.*;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 客户端默认实现

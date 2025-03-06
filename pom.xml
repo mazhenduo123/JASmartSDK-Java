@@ -6,7 +6,7 @@
 
     <groupId>com.jingansi.smart</groupId>
     <artifactId>JASmartSDK-Java</artifactId>
-    <version>1.1.230312-SNAPSHOT</version>
+    <version>1.1.250306-SNAPSHOT</version>
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -49,6 +49,24 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>2.8</version>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-assembly-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <descriptorRefs>-->
+<!--                        <descriptorRef>jar-with-dependencies</descriptorRef>-->
+<!--                    </descriptorRefs>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>make-assembly</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
