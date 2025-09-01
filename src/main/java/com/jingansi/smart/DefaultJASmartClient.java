@@ -68,6 +68,18 @@ public class DefaultJASmartClient implements JASmartClient {
     }
 
     @Override
+    public void thingPropertyPost(String productKey, String deviceId, Map<String, Object> data) {
+        messageChannel.send("sys/" + productKey + "/" + deviceId + "/thing/event/property/post", JSON.toJSONString(CommonMessage.builder()
+                .tid(UUID.randomUUID().toString())
+                .bid(UUID.randomUUID().toString())
+                .version("1.0")
+                .timestamp(System.currentTimeMillis())
+                .method("event.property.post")
+                .data(data)
+                .build()));
+    }
+
+    @Override
     public void thingEventPost(EventType eventType, String eventName, Map<String, Object> data) {
         messageChannel.send("sys/" + productKey + "/" + deviceId + "/thing/event/" + eventName + "/" + eventType.getValue(),
                 JSON.toJSONString(CommonMessage.builder()
@@ -107,6 +119,22 @@ public class DefaultJASmartClient implements JASmartClient {
         adapter.addServiceCallback("thing.properties.set", jaSmartServiceCallback);
         // 标准属性设置的method
         adapter.addServiceCallback("service.property.set", jaSmartServiceCallback);
+    }
+
+    @Override
+    public void platformServiceInvoke(String productKey, String deviceId, String identity, Map<String, Object> request, JASmartThingServiceReply jaSmartThingServiceReply) {
+        String tid = UUID.randomUUID().toString();
+        String bid = UUID.randomUUID().toString();
+        adapter.addServiceInvokeCallback(tid, jaSmartThingServiceReply);
+        messageChannel.send("sys/" + productKey + "/" + deviceId + "/platform/service/" + identity + "/post",
+                JSON.toJSONString(CommonMessage.builder()
+                .tid(tid)
+                .bid(bid)
+                .version("1.0")
+                .timestamp(System.currentTimeMillis())
+                .method("platform.service." + identity + ".post")
+                .data(request)
+                .build()));
     }
 
     @Override

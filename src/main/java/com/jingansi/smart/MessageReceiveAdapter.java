@@ -93,7 +93,9 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
         }
         JASmartServiceCallback callback = services.get(commonMessage.getMethod());
         if (null != callback) {
-            replyExecutor.execute(() -> callback.process(commonMessage.getTid(), commonMessage.getData(), new JASmartThingServiceReply() {
+            String[] topics = topic.split("/");
+            String deviceUuid = topics[1]  + "_" + topics[2];
+            replyExecutor.execute(() -> callback.process(deviceUuid, commonMessage.getData(), new JASmartThingServiceReply() {
                 @Override
                 public void complete(Map<String, Object> response) {
                     messageChannel.send(topic + "_reply", JSON.toJSONString(ReplyMessage.builder()
