@@ -13,8 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 消息解析适配
@@ -29,7 +30,7 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
     MessageChannel messageChannel;
     Map<String, ReplyEntity> replys = new ConcurrentHashMap<>();
     Timer replyExpireTimer = new Timer();
-    Executor replyExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
+    ExecutorService replyExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
     public MessageReceiveAdapter() {
         replyExpireTimer.schedule(new TimerTask() {
             @Override
@@ -137,7 +138,27 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
     }
 
     public void release() {
-        replyExpireTimer.cancel();
+        // Cancel timer
+        if (replyExpireTimer != null) {
+            replyExpireTimer.cancel();
+        }
+        // Shutdown thread pool
+        if (replyExecutor != null && !replyExecutor.isShutdown()) {
+            replyExecutor.shutdown();
+            try {
+                if (!replyExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    replyExecutor.shutdownNow();
+                    if (!replyExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        log.error("Executor did not terminate");
+                    }
+                }
+            } catch (InterruptedException e) {
+                replyExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+                log.error("Executor shutdown interrupted", e);
+            }
+        }
+        // Clear resources
         services.clear();
         replys.clear();
     }

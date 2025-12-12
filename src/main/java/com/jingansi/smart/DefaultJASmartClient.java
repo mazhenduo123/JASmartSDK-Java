@@ -6,6 +6,7 @@ import com.jingansi.smart.enums.EventType;
 import com.jingansi.smart.listener.JASmartServiceCallback;
 import com.jingansi.smart.listener.JASmartThingServiceReply;
 import com.jingansi.smart.report.CommonMessage;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.UUID;
  * @description
  * @date 2023/6/17 20:35
  **/
+@Slf4j
 public class DefaultJASmartClient implements JASmartClient {
     String endpoint;
     String productKey;
@@ -29,6 +31,7 @@ public class DefaultJASmartClient implements JASmartClient {
     MQTTChannel messageChannel;
     MessageReceiveAdapter adapter;
     List<String> topics;
+    private volatile boolean released = false;
 
     public DefaultJASmartClient(String endpoint, String productKey, String deviceId, String deviceSecret,
                                 String username, String password) {
@@ -160,8 +163,31 @@ public class DefaultJASmartClient implements JASmartClient {
 
     @Override
     public void release() {
-        adapter.release();
-        messageChannel.stop();
+        // Idempotency check
+        if (released) {
+            return;
+        }
+        released = true;
+        
+        // Stop message channel first to prevent new messages
+        if (messageChannel != null) {
+            try {
+                messageChannel.stop();
+            } catch (Exception e) {
+                // Log exception but continue cleanup
+                log.error("Exception during message channel release", e);
+            }
+        }
+        
+        // Then cleanup adapter
+        if (adapter != null) {
+            try {
+                adapter.release();
+            } catch (Exception e) {
+                // Log exception but continue cleanup
+                log.error("Exception during adapter release", e);
+            }
+        }
     }
 
     @Override
