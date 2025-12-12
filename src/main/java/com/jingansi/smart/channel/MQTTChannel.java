@@ -130,20 +130,20 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
                     log.error("MQTT CLOSE EXCEPTION. ERROR={}", e.getMessage());
                 }
             }
-            // 关闭线程池
+            // Shutdown thread pool
             if (executor != null && !executor.isShutdown()) {
                 executor.shutdown();
                 try {
                     if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
                         executor.shutdownNow();
                         if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                            log.error("线程池未能正常终止");
+                            log.error("Executor did not terminate");
                         }
                     }
                 } catch (InterruptedException e) {
                     executor.shutdownNow();
                     Thread.currentThread().interrupt();
-                    log.error("线程池关闭时被中断", e);
+                    log.error("Executor shutdown interrupted", e);
                 }
             }
         } finally {

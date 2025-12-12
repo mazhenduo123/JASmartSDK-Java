@@ -163,29 +163,29 @@ public class DefaultJASmartClient implements JASmartClient {
 
     @Override
     public void release() {
-        // 幂等性检查
+        // Idempotency check
         if (released) {
             return;
         }
         released = true;
         
-        // 先停止消息通道，防止新消息到达
+        // Stop message channel first to prevent new messages
         if (messageChannel != null) {
             try {
                 messageChannel.stop();
             } catch (Exception e) {
-                // 记录异常但继续清理其他资源
-                log.error("释放消息通道时发生异常", e);
+                // Log exception but continue cleanup
+                log.error("Exception during message channel release", e);
             }
         }
         
-        // 再清理适配器
+        // Then cleanup adapter
         if (adapter != null) {
             try {
                 adapter.release();
             } catch (Exception e) {
-                // 记录异常但继续清理
-                log.error("释放适配器时发生异常", e);
+                // Log exception but continue cleanup
+                log.error("Exception during adapter release", e);
             }
         }
     }

@@ -138,27 +138,27 @@ public class MessageReceiveAdapter implements MessageChannel.MessageReceiveCallb
     }
 
     public void release() {
-        // 取消定时器
+        // Cancel timer
         if (replyExpireTimer != null) {
             replyExpireTimer.cancel();
         }
-        // 关闭线程池
+        // Shutdown thread pool
         if (replyExecutor != null && !replyExecutor.isShutdown()) {
             replyExecutor.shutdown();
             try {
                 if (!replyExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
                     replyExecutor.shutdownNow();
                     if (!replyExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                        log.error("线程池未能正常终止");
+                        log.error("Executor did not terminate");
                     }
                 }
             } catch (InterruptedException e) {
                 replyExecutor.shutdownNow();
                 Thread.currentThread().interrupt();
-                log.error("线程池关闭时被中断", e);
+                log.error("Executor shutdown interrupted", e);
             }
         }
-        // 清理资源
+        // Clear resources
         services.clear();
         replys.clear();
     }
