@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,7 +33,7 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
     private MqttClient client;
     private Timer timer = new Timer();
     private Lock subscribeSync = new ReentrantLock(true);
-    private Executor executor = Executors.newFixedThreadPool(10);
+    private ExecutorService executor = Executors.newFixedThreadPool(10);
     private volatile boolean isConnected = false;
 
     public MQTTChannel(String endpoint, String productKey, String deviceId, String username, String password, List<String> topics
@@ -122,9 +123,29 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
         subscribeSync.lock();
         try {
             timer.cancel();
-            client.close();
-        } catch (MqttException e) {
-            log.error("MQTT CLOSE EXCEPTION. ERROR={}", e.getMessage());
+            if (client != null) {
+                try {
+                    client.close();
+                } catch (MqttException e) {
+                    log.error("MQTT CLOSE EXCEPTION. ERROR={}", e.getMessage());
+                }
+            }
+            // 关闭线程池
+            if (executor != null && !executor.isShutdown()) {
+                executor.shutdown();
+                try {
+                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        executor.shutdownNow();
+                        if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                            log.error("线程池未能正常终止");
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    executor.shutdownNow();
+                    Thread.currentThread().interrupt();
+                    log.error("线程池关闭时被中断", e);
+                }
+            }
         } finally {
             subscribeSync.unlock();
         }
