@@ -85,4 +85,10 @@ public interface JASmartClient {
      * 释放客户端
      */
     void release();
+
+    /**
+     * 获取MQTT连接状态
+     * @return true if connected, false otherwise
+     */
+    boolean isConnected();
 }
