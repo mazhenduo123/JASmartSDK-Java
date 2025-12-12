@@ -172,4 +172,12 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
             log.error("MQTT CONNECTION EXCEPTION. ERROR={}", e.getMessage());
         }
     }
+
+    /**
+     * 获取MQTT连接状态
+     * @return true if connected, false otherwise
+     */
+    public boolean isConnected() {
+        return isConnected;
+    }
 }

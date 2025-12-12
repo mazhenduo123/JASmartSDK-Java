@@ -163,4 +163,9 @@ public class DefaultJASmartClient implements JASmartClient {
         adapter.release();
         messageChannel.stop();
     }
+
+    @Override
+    public boolean isConnected() {
+        return messageChannel.isConnected();
+    }
 }
