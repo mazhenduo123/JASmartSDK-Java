@@ -33,7 +33,7 @@ public class MQTTChannel implements MessageChannel, MqttCallbackExtended {
     private Timer timer = new Timer();
     private Lock subscribeSync = new ReentrantLock(true);
     private Executor executor = Executors.newFixedThreadPool(10);
-    private boolean isConnected = false;
+    private volatile boolean isConnected = false;
 
     public MQTTChannel(String endpoint, String productKey, String deviceId, String username, String password, List<String> topics
             , MessageReceiveCallback callback) {
